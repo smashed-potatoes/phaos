@@ -8,6 +8,7 @@ sudo -H python get-pip.py
 sudo -H pip install scapy
 sudo -H pip install phue
 sudo -H pip install python-daemon
+sudo -H pip install astral
 
 sudo mkdir /serve
 sudo chown ubuntu:ubuntu /serve/
