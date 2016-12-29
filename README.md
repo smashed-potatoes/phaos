@@ -12,10 +12,11 @@ The following can be installed using pip: `pip install [package]`
 # Setup
 1. Make sure the script is executable with `chmod +x app.py`
 2. Set your mobile devices to have reserved/static IP assignments
-3. Set the following variables in `app.py`:
-    - `to_scan`:  Your mobile devices' MAC and IP addresses
-    - `hostname`: The hostname/IP of your Hue Bridge
+3. Set the following configuration items in `phaos.cfg`:
+    - `poll_interval`: The number of seconds to wait between checking if the device(s) are connected
+    - `bridge_hostname`: The hostname/IP of your Hue Bridge
     - `group_name`: The name of the room/group that you would like to turn on/off
+    - `[Devices]`:  In this section list your mobile devices in the format `IP Range to scan = MAC Address`
 4. Configure log rotation in `/etc/logrotate.conf`
 ```
 /var/log/phaos.log {

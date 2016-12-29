@@ -2,6 +2,7 @@
 import os.path
 import time
 import logging
+import ConfigParser
 
 from datetime import datetime
 from phue import Bridge, Group
@@ -17,6 +18,20 @@ class App():
         self.pidfile_path = '/tmp/phaos.pid'
         self.pidfile_timeout = 5
 
+        # Read the config file
+        config = ConfigParser.ConfigParser()
+        config.readfp(open('phaos.cfg'))
+
+
+        # Frequency to poll the devices
+        self.poll_interval = config.getfloat('General', 'poll_interval')
+        # Hue hostname (reserved IP)
+        self.hue_hostname = config.get('Hue', 'bridge_hostname')
+        # Group to toggle
+        self.group_name = config.get('Hue', 'group_name')
+        # Devices to be scanned
+        self.devices = config.items('Devices')
+
         self.log_file = '/var/log/phaos.log'
 
     def run(self):
@@ -26,20 +41,9 @@ class App():
                             filemode='a')
         while True:
             self.main()
-            time.sleep(15)
+            time.sleep(self.poll_interval)
 
     def main(self):
-        """===  Configuration ==="""
-        # MAC and IPs to check for
-        # IPs are set as reserved in router to avoid changes
-        to_scan = {
-            'D8:C4:6A:23:B4:05': '192.168.0.15/32',
-            '60:F1:89:1B:F6:E4': '192.168.0.16/32'
-        }
-        # Group to toggle
-        group_name = 'Main Room'
-        # Hue hostname (also reserved IP)
-        hostname = '192.168.0.11'
         # File used to track number of devices counted in previous run
         device_file = '/serve/phaos/devices.txt'
 
@@ -52,7 +56,7 @@ class App():
 
         # Arping the devices
         packets = []
-        for mac,ip in to_scan.iteritems():
+        for ip,mac in self.devices:
             ans,unans=srp(Ether(dst=mac)/ARP(pdst=ip),timeout=2,verbose=False)
             # Track the answers
             for pair in ans:
@@ -63,10 +67,10 @@ class App():
         # Turn on/off the lights given the devices
         logging.info("Previous count: %s - Current count %s", previous_count, current_count)
         if previous_count > 0 and current_count == 0:
-            bridge = Bridge(hostname)
+            bridge = Bridge(self.hue_hostname)
             Group(bridge, group_name).on = False
         elif previous_count == 0 and current_count > 0:
-            bridge = Bridge(hostname)
+            bridge = Bridge(self.hue_hostname)
             Group(bridge, group_name).on = True
 
         # Write current count to file
