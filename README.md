@@ -16,12 +16,23 @@ The following can be installed using pip: `pip install [package]`
     - `to_scan`:  Your mobile devices' MAC and IP addresses
     - `hostname`: The hostname/IP of your Hue Bridge
     - `group_name`: The name of the room/group that you would like to turn on/off
+4. Configure log rotation in `/etc/logrotate.conf`
+```
+/var/log/phaos.log {
+    missingok
+    daily
+    compress
+    rotate 15
+}
+```
 
 # Usage
 Before running the daemon for the first time, press the button on top if your hue hub, this allows it to get an auth token.
 This only needs to be done the first time, it stores the hue token in ~/.python_hue
 
 The daemon can be started, stopped or restarted by calling the script with the appropriate command:
-`sudo ./app.py start|stop|restart`
+```
+sudo ./app.py start|stop|restart
+```
 
 Note: The daemon must be run with sudo to allow for access to the socket for the ARP ping

@@ -1,8 +1,8 @@
 #!/usr/bin/python
-
 import os.path
-
 import time
+import logging
+
 from datetime import datetime
 from phue import Bridge, Group
 from scapy.all import srp,Ether,ARP
@@ -10,13 +10,20 @@ from daemon import runner
 
 class App():
     def __init__(self):
+        # DaemonRunner config items
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
         self.pidfile_path = '/tmp/phaos.pid'
         self.pidfile_timeout = 5
 
+        self.log_file = '/var/log/phaos.log'
+
     def run(self):
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)s %(levelname)s %(message)s',
+                            filename=self.log_file,
+                            filemode='a')
         while True:
             self.main()
             time.sleep(15)
@@ -46,7 +53,7 @@ class App():
         # Arping the devices
         packets = []
         for mac,ip in to_scan.iteritems():
-            ans,unans=srp(Ether(dst=mac)/ARP(pdst=ip),timeout=2)
+            ans,unans=srp(Ether(dst=mac)/ARP(pdst=ip),timeout=2,verbose=False)
             # Track the answers
             for pair in ans:
                 packets.append(pair)
@@ -54,7 +61,7 @@ class App():
         current_count = len(packets)
 
         # Turn on/off the lights given the devices
-        print str(datetime.now()), "Previous count:", previous_count, "Current count:", current_count
+        logging.info("Previous count: %s - Current count %s", previous_count, current_count)
         if previous_count > 0 and current_count == 0:
             bridge = Bridge(hostname)
             Group(bridge, group_name).on = False
@@ -71,7 +78,3 @@ if __name__ == '__main__':
     app = App()
     daemon_runner = runner.DaemonRunner(app)
     daemon_runner.do_action()
-
-    #Note that you'll need the python-deaemon library. In Ubuntu, you would:
-    #sudo apt-get install python-daemon
-    #Then just start it with ./howdy.py start, and stop it with ./howdy.py stop.
