@@ -26,7 +26,6 @@ class App():
         config.optionxform = str
         config.readfp(open('phaos.cfg'))
 
-
         # Frequency to poll the devices
         self.poll_interval = config.getfloat('General', 'poll_interval')
         # Hue hostname (reserved IP)
@@ -48,26 +47,24 @@ class App():
         self.city = Astral()[self.city_name]
         os.environ['TZ'] = self.city.timezone
 
+        # Start the count as all devices
+        self.count = len(self.devices)
+
 
     def run(self):
         logging.basicConfig(level=logging.DEBUG,
                             format='%(asctime)s %(levelname)s %(message)s',
                             filename=self.log_file,
                             filemode='a')
+
+        logging.info("Starting - tracking %s devices", self.count)
         while True:
             self.main()
             time.sleep(self.poll_interval)
 
     def main(self):
-        # File used to track number of devices counted in previous run
-        device_file = '/serve/phaos/devices.txt'
 
-        # Read the previous count from the file
-        if os.path.exists(device_file):
-            with open(device_file, 'r') as track_file:
-                previous_count = int(track_file.readline())
-        else:
-            previous_count = 0
+        previous_count = self.count
 
         # Arping the devices
         packets = []
@@ -86,9 +83,8 @@ class App():
         elif previous_count == 0 and current_count > 0:
             self.set_lights(True)
 
-        # Write current count to file
-        with open(device_file, 'w') as track_file:
-            track_file.write(str(current_count))
+        # Track current count to file
+        self.count = current_count
 
     def set_lights(self, on=True):
         bridge = Bridge(self.hue_hostname)
